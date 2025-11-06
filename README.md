@@ -115,9 +115,9 @@ npm start
 - ONNX 분류기 통합 준비 (KOELECTRA 등)
 
 #### 6. 마스킹 및 경고
-- ROI 영역에 시각적 마스킹 표시
-- 경고음 재생
-- 5초 후 자동 해제
+- ROI 영역에 시각적 마스킹(블라인드) 표시
+- 우상단 토글 버튼으로 보기/가리기 전환 가능
+- SAFE 판정 수신 시 자동 해제, 경고음 재생
 
 #### 7. 상태 관리 (FSM)
 - 상태 머신 구현 (idle, capturing, recognizing, classifying, masking, error)
