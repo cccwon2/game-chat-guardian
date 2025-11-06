@@ -5,6 +5,9 @@ contextBridge.exposeInMainWorld('gcg', {
   onContentFlagged: (cb: (event: any, data?: any) => void) => {
     ipcRenderer.on('CONTENT_FLAGGED', (event, data) => cb(event, data));
   },
+  onContentSafe: (cb: () => void) => {
+    ipcRenderer.on('CONTENT_SAFE', () => cb());
+  },
   sendOcrText: (text: string) => ipcRenderer.send('OCR_TEXT', text),
   sendSttText: (text: string) => ipcRenderer.send('STT_TEXT', text)
 });

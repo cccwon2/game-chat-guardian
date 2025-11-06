@@ -6,7 +6,8 @@
   <style>
     html, body, #app { margin:0; padding:0; width:100%; height:100%; background: rgba(0,0,0,0.0);}
     #selection { position: absolute; border: 2px dashed #00e5ff; background: rgba(0,229,255,0.15); display:none; pointer-events:none; }
-    #blurMask { position:absolute; background: rgba(0,0,0,0.4); display:none; }
+    #blurMask { position:absolute; background: rgba(0,0,0,0.85); display:none; color:#fff; }
+    #toggleMask { position:absolute; display:none; padding:6px 10px; font-size:12px; border-radius:4px; border:1px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.6); color:#fff; cursor:pointer; }
     canvas { position:absolute; left:0; top:0; }
     .hint { position: fixed; top: 12px; left: 12px; color: #00e5ff; font-family: Arial, sans-serif; text-shadow: 0 0 4px #000; }
   </style>
@@ -15,6 +16,7 @@
   <div class="hint">?쒕옒洹명븯??ROI ?좏깮 (ESC濡?痍⑥냼)</div>
   <div id="selection"></div>
   <div id="blurMask"></div>
+  <button id="toggleMask">보기</button>
   <audio id="beep" src="../../assets/beep.wav"></audio>
   <script type="module" src="../../dist/overlay/overlay.js"></script>
 </body>

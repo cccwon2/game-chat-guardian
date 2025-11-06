@@ -143,6 +143,9 @@ function startCaptureLoop() {
           transitionTo('masking');
           setTimeout(() => transitionTo('idle'), 5000);
         } else {
+          if (overlayWin) {
+            overlayWin.webContents.send('CONTENT_SAFE');
+          }
           transitionTo('idle');
         }
       } else {
@@ -180,6 +183,9 @@ function startSttLoop() {
           transitionTo('masking');
           setTimeout(() => transitionTo('idle'), 5000);
         } else {
+          if (overlayWin) {
+            overlayWin.webContents.send('CONTENT_SAFE');
+          }
           transitionTo('idle');
         }
       } else {

@@ -3,11 +3,13 @@ declare global { interface Window { gcg: any } }
 
 const selection = document.getElementById('selection') as HTMLDivElement;
 const blurMask = document.getElementById('blurMask') as HTMLDivElement;
+const toggleBtn = document.getElementById('toggleMask') as HTMLButtonElement;
 const beep = document.getElementById('beep') as HTMLAudioElement;
 
 let startX = 0, startY = 0;
 let dragging = false;
 let savedRoi: { x: number; y: number; width: number; height: number } | null = null;
+let isMasked = false;
 
 function setRect(el: HTMLElement, x: number, y: number, w: number, h: number) {
   el.style.left = x + 'px';
@@ -49,10 +51,29 @@ window.addEventListener('mouseup', (e) => {
 window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { dragging = false; selection.style.display = 'none'; } });
 
 (window as any).gcg.onContentFlagged(async (_event: any, data?: { text: string; reason?: string }) => {
-  if (savedRoi) {
-    setRect(blurMask, savedRoi.x, savedRoi.y, savedRoi.width, savedRoi.height);
-    blurMask.style.display = 'block';
-    try { await beep.play(); } catch {}
-    setTimeout(() => { blurMask.style.display = 'none'; }, 5000);
-  }
+  if (!savedRoi) return;
+  setRect(blurMask, savedRoi.x, savedRoi.y, savedRoi.width, savedRoi.height);
+  // 토글 버튼을 ROI 우상단에 배치
+  toggleBtn.style.left = (savedRoi.x + savedRoi.width - 64) + 'px';
+  toggleBtn.style.top = (savedRoi.y + 8) + 'px';
+  
+  isMasked = true;
+  blurMask.style.display = 'block';
+  toggleBtn.style.display = 'inline-block';
+  toggleBtn.textContent = '보기';
+  
+  try { await beep.play(); } catch {}
+});
+
+(window as any).gcg.onContentSafe(() => {
+  isMasked = false;
+  blurMask.style.display = 'none';
+  toggleBtn.style.display = 'none';
+});
+
+toggleBtn?.addEventListener('click', () => {
+  if (!savedRoi) return;
+  isMasked = !isMasked;
+  blurMask.style.display = isMasked ? 'block' : 'none';
+  toggleBtn.textContent = isMasked ? '보기' : '가리기';
 });
