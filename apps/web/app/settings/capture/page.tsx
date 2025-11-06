@@ -3,12 +3,14 @@
 import { useEffect, useState, useRef } from "react";
 import { connectTranscribe, emitAudioChunk } from "@/lib/socket";
 import { toast } from "sonner";
+import { mapErrorToInfo, calculateBackoff, ErrorInfo } from "@/lib/error-handler";
 
 export default function CapturePage() {
   const [sources, setSources] = useState<CaptureSource[]>([]);
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ErrorInfo | null>(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const socketRef = useRef<ReturnType<typeof connectTranscribe> | null>(null);
@@ -25,9 +27,16 @@ export default function CapturePage() {
       const sourcesList = await window.api.capture.listSources();
       setSources(sourcesList);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "소스를 불러올 수 없습니다.";
-      setError(message);
-      toast.error(message);
+      const errorInfo = mapErrorToInfo(err);
+      setError(errorInfo);
+      toast.error(errorInfo.message, {
+        action: {
+          label: "재시도",
+          onClick: () => {
+            setTimeout(() => loadSources(), errorInfo.backoff || 1000);
+          },
+        },
+      });
     }
   };
 
@@ -102,9 +111,34 @@ export default function CapturePage() {
       });
 
     } catch (err) {
-      const message = err instanceof Error ? err.message : "캡처를 시작할 수 없습니다.";
-      setError(message);
-      toast.error(message);
+      const errorInfo = mapErrorToInfo(err);
+      setError(errorInfo);
+      setIsCapturing(false);
+      
+      const backoff = calculateBackoff(retryAttempt);
+      const action = errorInfo.action === "retry" ? {
+        label: "재시도",
+        onClick: () => {
+          setRetryAttempt(retryAttempt + 1);
+          setTimeout(() => startCapture(), backoff);
+        },
+      } : errorInfo.action === "openSettings" ? {
+        label: "설정 열기",
+        onClick: () => {
+          toast.info("Windows 설정 > 개인 정보 > 마이크에서 권한을 허용해주세요.");
+        },
+      } : errorInfo.action === "selectSource" ? {
+        label: "소스 재선택",
+        onClick: () => {
+          loadSources();
+          setSelectedSourceId(null);
+        },
+      } : undefined;
+
+      toast.error(errorInfo.message, {
+        action,
+        duration: 5000,
+      });
       console.error("캡처 오류:", err);
     }
   };
@@ -135,13 +169,54 @@ export default function CapturePage() {
 
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-          <button
-            onClick={loadSources}
-            className="ml-4 text-red-700 underline"
-          >
-            재시도
-          </button>
+          <div className="font-semibold mb-2">{error.message}</div>
+          <div className="flex gap-2">
+            {error.action === "retry" && (
+              <button
+                onClick={() => {
+                  const backoff = calculateBackoff(retryAttempt);
+                  setTimeout(() => {
+                    if (error.code === "PERMISSION_DENIED" || error.code === "NOT_READABLE") {
+                      startCapture();
+                    } else {
+                      loadSources();
+                    }
+                  }, backoff);
+                  setRetryAttempt(retryAttempt + 1);
+                }}
+                className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+              >
+                재시도
+              </button>
+            )}
+            {error.action === "openSettings" && (
+              <button
+                onClick={() => {
+                  toast.info("Windows 설정 > 개인 정보 > 마이크에서 권한을 허용해주세요.");
+                }}
+                className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+              >
+                설정 열기
+              </button>
+            )}
+            {error.action === "selectSource" && (
+              <button
+                onClick={() => {
+                  loadSources();
+                  setSelectedSourceId(null);
+                }}
+                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+              >
+                소스 재선택
+              </button>
+            )}
+            <button
+              onClick={() => setError(null)}
+              className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
+            >
+                닫기
+              </button>
+          </div>
         </div>
       )}
 

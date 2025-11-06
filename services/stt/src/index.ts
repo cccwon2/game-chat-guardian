@@ -67,6 +67,9 @@ async function transcribe(buffer: Buffer): Promise<STTResult> {
 // 네임스페이스 '/transcribe'
 const transcribeNamespace = io.of("/transcribe");
 
+// 네임스페이스 '/moderation'
+const moderationNamespace = io.of("/moderation");
+
 // 네임스페이스 연결 오류 핸들링
 transcribeNamespace.on("connection_error", (error) => {
   console.error(`[STT] 네임스페이스 연결 오류:`, error);
@@ -222,10 +225,63 @@ httpServer.on("error", (error: NodeJS.ErrnoException) => {
   }
 });
 
+// Moderation 네임스페이스 처리
+moderationNamespace.on("connection", (socket) => {
+  console.log(`[Moderation] 클라이언트 연결 성공: ${socket.id}`);
+
+  socket.on("ocr_lines", (data: { lines: Array<{ text: string; bbox: { x: number; y: number; width: number; height: number } }> }) => {
+    try {
+      console.log(`[Moderation] OCR 라인 수신: ${data.lines.length}개`);
+
+      // Mock moderation: 간단한 룰 기반 필터링
+      const toxicWords = ["욕설", "비방", "혐오", "차별"]; // 예시
+      const indices: number[] = [];
+      let score = 0;
+
+      data.lines.forEach((line, index) => {
+        const lowerText = line.text.toLowerCase();
+        const hasToxic = toxicWords.some((word) => lowerText.includes(word.toLowerCase()));
+        
+        if (hasToxic) {
+          indices.push(index);
+          score = Math.max(score, 0.7 + Math.random() * 0.2); // 0.7-0.9
+        } else {
+          // 랜덤 점수 (테스트용)
+          const randomScore = Math.random();
+          if (randomScore > 0.8) {
+            indices.push(index);
+            score = Math.max(score, randomScore);
+          }
+        }
+      });
+
+      // 최소 점수 설정
+      if (indices.length > 0 && score < 0.5) {
+        score = 0.5 + Math.random() * 0.3;
+      }
+
+      console.log(`[Moderation] 결과: indices=${indices.join(",")}, score=${score.toFixed(2)}`);
+
+      socket.emit("tox_lines", {
+        indices,
+        score,
+      });
+    } catch (error) {
+      console.error(`[Moderation] 처리 오류:`, error);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`[Moderation] 클라이언트 연결 해제: ${socket.id}`);
+  });
+});
+
 httpServer.listen(PORT, () => {
   console.log(`[STT] 서버 시작: http://localhost:${PORT}`);
   console.log(`[STT] 네임스페이스 '/transcribe' 대기 중...`);
+  console.log(`[STT] 네임스페이스 '/moderation' 대기 중...`);
   console.log(`[STT] 헬스 체크: http://localhost:${PORT}/`);
   console.log(`[STT] Socket.IO 네임스페이스: ws://localhost:${PORT}/transcribe`);
+  console.log(`[STT] Socket.IO 네임스페이스: ws://localhost:${PORT}/moderation`);
 });
 

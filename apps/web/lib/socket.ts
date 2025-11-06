@@ -1,6 +1,7 @@
 import { io, Socket } from "socket.io-client";
 
-const STT_SERVER_URL = process.env.NEXT_PUBLIC_STT_SERVER_URL || "http://localhost:3001";
+const SOCKET_SERVER_URL = process.env.NEXT_PUBLIC_SOCKET_SERVER || process.env.NEXT_PUBLIC_STT_SERVER_URL || "http://localhost:3001";
+const STT_SERVER_URL = process.env.NEXT_PUBLIC_STT_SERVER_URL || process.env.NEXT_PUBLIC_SOCKET_SERVER || "http://localhost:3001";
 
 export function connectTranscribe(): Socket {
   console.log(`[Socket] STT 서버 연결 시도: ${STT_SERVER_URL}/transcribe`);
@@ -68,5 +69,37 @@ export function emitAudioChunk(
       ts: timestamp,
     });
   });
+}
+
+// Moderation 네임스페이스 연결
+export function connectModeration(): Socket {
+  console.log(`[Socket] Moderation 서버 연결 시도: ${SOCKET_SERVER_URL}/moderation`);
+  
+  const socket = io(`${SOCKET_SERVER_URL}/moderation`, {
+    transports: ["polling", "websocket"],
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: Infinity,
+    timeout: 10000,
+    forceNew: false,
+    autoConnect: true,
+    upgrade: true,
+    rememberUpgrade: true,
+  });
+
+  socket.on("connect", () => {
+    console.log("Moderation Socket.IO 연결 성공:", socket.id);
+  });
+
+  socket.on("disconnect", (reason) => {
+    console.log("Moderation Socket.IO 연결 끊김:", reason);
+  });
+
+  socket.on("connect_error", (error) => {
+    console.error("Moderation Socket.IO 연결 오류:", error.message);
+  });
+
+  return socket;
 }
 

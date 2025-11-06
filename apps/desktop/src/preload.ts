@@ -1,4 +1,4 @@
-import { contextBridge, desktopCapturer } from "electron";
+import { contextBridge, desktopCapturer, ipcRenderer } from "electron";
 
 interface CaptureSource {
   id: string;
@@ -25,6 +25,19 @@ contextBridge.exposeInMainWorld("api", {
         console.error("소스 가져오기 실패:", error);
         throw error;
       }
+    },
+  },
+  app: {
+    setEditMode: (on: boolean) => {
+      ipcRenderer.invoke("app:edit:set", on);
+    },
+    quit: () => {
+      ipcRenderer.invoke("app:quit");
+    },
+    onEditState: (callback: (on: boolean) => void) => {
+      ipcRenderer.on("app:edit:state", (event, on: boolean) => {
+        callback(on);
+      });
     },
   },
 });
