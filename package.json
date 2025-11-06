@@ -1,0 +1,19 @@
+{
+  "name": "game-chat-guardian",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n web,desktop \"pnpm --filter ./apps/web dev\" \"cross-env OVERLAY_URL=http://localhost:3000/overlay pnpm --filter ./apps/desktop dev\"",
+    "build:web": "pnpm --filter ./apps/web build",
+    "build:desktop": "pnpm --filter ./apps/desktop build",
+    "build": "pnpm build:web && pnpm build:desktop",
+    "dev:stt": "pnpm --filter ./services/stt dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3"
+  },
+  "packageManager": "pnpm@8.15.0"
+}
+
