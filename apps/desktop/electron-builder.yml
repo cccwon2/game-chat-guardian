@@ -1,0 +1,1 @@
+appId: com.gcg.app\nproductName: GameChatGuardian\nfiles:\n  - dist/**\n  - assets/**\nextraResources:\n  - from: assets\n    to: assets\nwin:\n  target: nsis\n

@@ -1,0 +1,21 @@
+﻿<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Overlay</title>
+  <style>
+    html, body, #app { margin:0; padding:0; width:100%; height:100%; background: rgba(0,0,0,0.0);}
+    #selection { position: absolute; border: 2px dashed #00e5ff; background: rgba(0,229,255,0.15); display:none; pointer-events:none; }
+    #blurMask { position:absolute; background: rgba(0,0,0,0.4); display:none; }
+    canvas { position:absolute; left:0; top:0; }
+    .hint { position: fixed; top: 12px; left: 12px; color: #00e5ff; font-family: Arial, sans-serif; text-shadow: 0 0 4px #000; }
+  </style>
+</head>
+<body>
+  <div class="hint">?쒕옒洹명븯??ROI ?좏깮 (ESC濡?痍⑥냼)</div>
+  <div id="selection"></div>
+  <div id="blurMask"></div>
+  <audio id="beep" src="../../assets/beep.wav"></audio>
+  <script type="module" src="../../dist/overlay/overlay.js"></script>
+</body>
+</html>

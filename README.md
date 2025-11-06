@@ -51,65 +51,90 @@ packages/
 ### 필수 요구사항
 
 - Node.js ≥ 20
-- pnpm ≥ 8
+- npm 또는 pnpm
 
 ### 설치
 
 ```bash
+# 데스크톱 앱 디렉터리로 이동
+cd apps/desktop
+
 # 의존성 설치
-pnpm install
+npm install
 ```
 
 ### 개발 모드
 
 ```bash
-# Next.js + Electron 동시 실행
-pnpm dev
+# TypeScript 컴파일
+npm run build
 
-# STT 서버만 실행
-pnpm dev:stt
+# Electron 앱 실행
+npm run dev
 ```
-
-개발 모드는 다음을 실행합니다:
-- Next.js 웹 앱 (http://localhost:3000)
-- Electron 앱 (오버레이 창 포함)
-- STT 서버는 별도로 실행 (pnpm dev:stt)
 
 ### 빌드
 
 ```bash
-# 웹 앱 빌드
-pnpm build:web
+# TypeScript 컴파일
+npm run build
 
-# Electron 앱 빌드
-pnpm build:desktop
-
-# 전체 빌드
-pnpm build
+# Electron 앱 실행
+npm start
 ```
 
 ## 📖 주요 기능
 
-### P1: 오버레이 창
+### ✅ 구현 완료
 
-- 투명하고 항상 위에 표시되는 HUD 창
-- `Ctrl+Shift+G` 단축키로 표시/숨김 토글
-- 클릭스루 기능 (마우스 클릭이 아래 앱으로 전달됨)
-- Next.js `/overlay` 라우트에서 렌더링
+#### 1. 트레이 앱
+- 시스템 트레이 아이콘 등록
+- 컨텍스트 메뉴 (설정 열기, 종료)
+- 헤드리스 백그라운드 실행
 
-### P2: 화면/오디오 캡처
+#### 2. 오버레이 창 및 ROI 선택
+- 투명하고 항상 위에 표시되는 오버레이 창
+- 마우스 드래그로 ROI(관심 영역) 선택
+- ROI 선택 후 자동으로 클릭스루 모드 전환
 
-- `/settings/capture` 페이지에서 소스 선택
-- DesktopCapturer로 화면/윈도우 캡처
-- 오디오 트랙만 분리하여 1초 단위 청크로 전송
-- Socket.IO를 통한 실시간 스트리밍
+#### 3. 화면 캡처 및 OCR (골격)
+- `desktopCapturer`를 사용한 화면 캡처
+- ROI 영역만 크롭하여 이미지 추출
+- ONNX 런타임 통합 (PaddleOCR 모델 로드 준비)
+- 주기적 캡처 루프 (1초 간격)
 
-### P3: STT 스트리밍
+#### 4. 오디오 캡처 및 STT (골격)
+- WASAPI 루프백 캡처 준비
+- VAD 및 faster-whisper 통합 준비
+- Python 워커 호출 구조 준비
 
-- Socket.IO 네임스페이스 `/transcribe` 사용
-- 2~3초 버퍼링 후 STT 수행
-- Mock STT (실제 Faster-Whisper로 교체 가능)
-- HUD에 실시간 텍스트 표시
+#### 5. 유해 표현 판단
+- 금칙어 사전 매칭
+- 화이트리스트 기반 오탐 방지
+- 텍스트 정규화 (소문자화, 특수문자 제거)
+- ONNX 분류기 통합 준비 (KOELECTRA 등)
+
+#### 6. 마스킹 및 경고
+- ROI 영역에 시각적 마스킹 표시
+- 경고음 재생
+- 5초 후 자동 해제
+
+#### 7. 상태 관리 (FSM)
+- 상태 머신 구현 (idle, capturing, recognizing, classifying, masking, error)
+- 상태 전이 로깅
+
+#### 8. 로컬 저장소
+- `rules.json`: 금칙어/화이트리스트 저장
+- `events.jsonl`: 유해 표현 감지 이벤트 로깅
+- `app.getPath('userData')` 경로에 저장
+
+### 🚧 향후 구현 예정
+
+- 실제 PaddleOCR ONNX 모델 통합
+- WASAPI 루프백 캡처 + VAD + faster-whisper 통합
+- ONNX 기반 분류기 (KOELECTRA 등) 통합
+- 설정 UI (메인 창)
+- 성능 최적화 및 CPU 사용량 모니터링
 
 ## 🔒 보안
 
@@ -122,7 +147,50 @@ pnpm build
 
 ## 🛠️ 기술 스택
 
-- **Frontend**: Next.js 14, React 18, TypeScript, Tailwind CSS
-- **Desktop**: Electron 28
-- **Backend**: Express, Socket.IO 4.8
-- **Package Manager**: pnpm workspace
+- **Desktop**: Electron 28, TypeScript
+- **OCR**: ONNX Runtime (Node.js 바인딩), PaddleOCR 준비
+- **STT**: faster-whisper 준비 (Python 워커)
+- **상태 관리**: 간단한 FSM (메인 프로세스)
+- **Package Manager**: npm
+
+## 📁 프로젝트 구조
+
+```
+apps/desktop/
+  src/
+    main/
+      index.ts        # 메인 프로세스 (트레이, 오버레이, IPC)
+      capture.ts      # 화면 캡처 모듈
+      ocr.ts          # OCR 모듈 (ONNX)
+      stt.ts          # STT 모듈 (WASAPI + faster-whisper)
+      classifier.ts   # 유해 표현 판단 로직
+      storage.ts      # 로컬 저장소 (rules.json, events.jsonl)
+      fsm.ts          # 상태 머신
+    preload/
+      index.ts        # Preload 스크립트 (contextBridge)
+    overlay/
+      index.html      # 오버레이 HTML
+      overlay.ts      # 오버레이 렌더러 스크립트
+  assets/
+    beep.wav          # 경고음
+  dist/               # TypeScript 컴파일 결과
+```
+
+## 📝 설정 파일
+
+### rules.json
+금칙어 및 화이트리스트를 관리하는 파일입니다. `app.getPath('userData')` 경로에 저장됩니다.
+
+```json
+{
+  "badwords": ["욕설", "비방", "혐오"],
+  "whitelist": ["게임", "채팅", "가드"]
+}
+```
+
+### events.jsonl
+유해 표현 감지 이벤트를 한 줄씩 기록하는 로그 파일입니다.
+
+```jsonl
+{"timestamp":"2024-01-01T00:00:00.000Z","text":"유해 텍스트","judgment":"HARMFUL","reason":"금칙어: 욕설"}
+```

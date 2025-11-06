@@ -1,26 +1,22 @@
 {
-  "name": "@game-chat-guardian/desktop",
-  "version": "1.0.0",
+  "name": "gcg-app",
+  "version": "0.1.0",
   "private": true,
-  "main": "dist/main.js",
+  "main": "dist/main/index.js",
+  "type": "module",
   "scripts": {
-    "dev": "tsc && electron .",
-    "build": "tsc && electron-builder",
-    "type-check": "tsc --noEmit"
+    "dev": "cross-env NODE_ENV=development electron .",
+    "build": "tsc -p tsconfig.json",
+    "start": "electron ."
   },
   "dependencies": {
-    "electron": "^28.0.0"
+    "electron": "28.3.3",
+    "onnxruntime-node": "^1.23.2"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "typescript": "^5",
-    "electron-builder": "^24.9.1"
-  },
-  "build": {
-    "appId": "com.gamechatguardian.app",
-    "productName": "Game Chat Guardian",
-    "win": {
-      "target": "nsis"
-    }
+    "@types/node": "20.11.30",
+    "cross-env": "7.0.3",
+    "electron-builder": "^26.0.12",
+    "typescript": "5.4.5"
   }
 }
